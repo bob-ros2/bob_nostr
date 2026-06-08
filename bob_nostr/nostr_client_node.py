@@ -189,6 +189,8 @@ class NostrBridgeNode(Node):
 
         # Class to handle incoming notifications
         class BridgeNotificationHandler(HandleNotification):
+            """Handler for incoming Nostr events."""
+
             def __init__(self, node):
                 self.node = node
 

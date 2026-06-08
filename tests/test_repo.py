@@ -17,9 +17,10 @@
 import configparser
 import os
 import stat
-import yaml
 
 import pytest
+
+import yaml
 
 # Paths
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -186,10 +187,10 @@ def test_skill_md_frontmatter():
         try:
             metadata = yaml.safe_load(frontmatter_str)
         except Exception as e:
-            pytest.fail(f"Invalid YAML in {skill}/SKILL.md frontmatter: {e}")
+            pytest.fail(f'Invalid YAML in {skill}/SKILL.md frontmatter: {e}')
 
         assert isinstance(metadata, dict), (
-            f"YAML frontmatter in {skill}/SKILL.md is not a dictionary."
+            f'YAML frontmatter in {skill}/SKILL.md is not a dictionary.'
         )
 
         # Verify required keys

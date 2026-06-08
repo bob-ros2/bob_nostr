@@ -24,35 +24,35 @@ import json
 import os
 import urllib.request
 
-import pytest
 from nostr_sdk import (
-    Keys, Client, Filter, HandleNotification, Timestamp, EventBuilder,
-    gift_wrap, UnwrappedGift, NostrSigner, PublicKey, Kind as NKind,
-    RelayUrl
+    Client, EventBuilder, Filter, gift_wrap, HandleNotification, Keys,
+    Kind as NKind, NostrSigner, PublicKey, RelayUrl, Timestamp, UnwrappedGift
 )
 
+import pytest
+
 # Resolve target Agent Public Key dynamically from signer service if not overridden in env
-NOSTR_SIGNER_URL = os.environ.get("NOSTR_SIGNER_URL", "http://localhost:8080")
-AGENT_PUBKEY_HEX = os.environ.get("AGENT_PUBKEY_HEX")
+NOSTR_SIGNER_URL = os.environ.get('NOSTR_SIGNER_URL', 'http://localhost:8080')
+AGENT_PUBKEY_HEX = os.environ.get('AGENT_PUBKEY_HEX')
 
 if not AGENT_PUBKEY_HEX:
     try:
-        req = urllib.request.Request(f"{NOSTR_SIGNER_URL.rstrip('/')}/public_key")
+        req = urllib.request.Request(f'{NOSTR_SIGNER_URL.rstrip("/")}/public_key')
         with urllib.request.urlopen(req, timeout=5) as response:
             res_data = json.loads(response.read().decode())
-            AGENT_PUBKEY_HEX = res_data.get("public_key_hex")
-            print(f"Dynamically resolved agent public key: {AGENT_PUBKEY_HEX}")
+            AGENT_PUBKEY_HEX = res_data.get('public_key_hex')
+            print(f'Dynamically resolved agent public key: {AGENT_PUBKEY_HEX}')
     except Exception as e:
-        print(f"Failed to fetch public key from signer at {NOSTR_SIGNER_URL}: {e}")
+        print(f'Failed to fetch public key from signer at {NOSTR_SIGNER_URL}: {e}')
 
 if not AGENT_PUBKEY_HEX:
     # Fallback to default Curator key
-    AGENT_PUBKEY_HEX = "7009f1551e0e7652ef4e5ca69da4afde1b09ebc8162df21e4b2f879489fe60ad"
+    AGENT_PUBKEY_HEX = '7009f1551e0e7652ef4e5ca69da4afde1b09ebc8162df21e4b2f879489fe60ad'
 
 RELAY_URLS = os.environ.get(
-    "NOSTR_RELAYS",
-    "ws://nostr-relay-1:8080"
-).split(",")
+    'NOSTR_RELAYS',
+    'ws://nostr-relay-1:8080'
+).split(',')
 
 # Event to notify when reply is received
 reply_received = asyncio.Event()
@@ -74,11 +74,11 @@ class ReplyHandler(HandleNotification):
                 )
                 rumor = unwrapped.rumor()
                 if rumor.created_at().as_secs() >= self.start_time.as_secs():
-                    unwrapped_result["sender"] = unwrapped.sender().to_hex()
-                    unwrapped_result["content"] = rumor.content()
+                    unwrapped_result['sender'] = unwrapped.sender().to_hex()
+                    unwrapped_result['content'] = rumor.content()
                     reply_received.set()
             except Exception as e:
-                print(f"[ERROR] Failed to unwrap: {e}")
+                print(f'[ERROR] Failed to unwrap: {e}')
 
     async def handle_msg(self, relay_url, msg):
         pass
@@ -91,8 +91,8 @@ async def test_nip17_flow():
     reply_received.clear()
     unwrapped_result.clear()
 
-    print(f"Target Agent Pubkey: {AGENT_PUBKEY_HEX}")
-    print(f"Connecting to relays: {RELAY_URLS}")
+    print(f'Target Agent Pubkey: {AGENT_PUBKEY_HEX}')
+    print(f'Connecting to relays: {RELAY_URLS}')
 
     # Generate temporary keys for the tester client
     tester_keys = Keys.generate()
@@ -103,7 +103,7 @@ async def test_nip17_flow():
         await client.add_relay(RelayUrl.parse(url))
 
     await client.connect()
-    print("Connected to relays.")
+    print('Connected to relays.')
 
     agent_pub = PublicKey.parse(AGENT_PUBKEY_HEX)
 
@@ -115,10 +115,10 @@ async def test_nip17_flow():
         tester_keys.public_key()
     ).since(since_time)
     await client.subscribe(sub_filter, None)
-    print("Subscribed to replies (Kind 1059) with history margin.")
+    print('Subscribed to replies (Kind 1059) with history margin.')
 
     # 2. Build and wrap the test message (Kind 14 rumor)
-    prompt = "Ping! Teste NIP-17 bitte mit der Antwort: PONG_SUCCESS."
+    prompt = 'Ping! Teste NIP-17 bitte mit der Antwort: PONG_SUCCESS.'
     print(f"Sending prompt to agent: '{prompt}'")
 
     rumor_builder = EventBuilder.private_msg_rumor(agent_pub, prompt)
@@ -129,35 +129,35 @@ async def test_nip17_flow():
 
     # Publish to relays
     await client.send_event(wrapped_event)
-    print("Sent Gift Wrap event to agent.")
+    print('Sent Gift Wrap event to agent.')
 
     # 3. Listen for response
-    print("Waiting for response...")
+    print('Waiting for response...')
     handler_task = asyncio.create_task(
         client.handle_notifications(ReplyHandler(tester_signer, tester_start_time))
     )
 
     try:
         await asyncio.wait_for(reply_received.wait(), timeout=60.0)
-        print("\n" + "="*40)
+        print('\n' + '=' * 40)
         print(f"From: {unwrapped_result.get('sender')}")
         print(f"Content: {unwrapped_result.get('content')}")
-        print("="*40 + "\n")
+        print('=' * 40 + '\n')
 
-        content = unwrapped_result.get("content", "")
-        assert "PONG_SUCCESS" in content or "pong" in content.lower(), (
+        content = unwrapped_result.get('content', '')
+        assert 'PONG_SUCCESS' in content or 'pong' in content.lower(), (
             f"Expected 'PONG_SUCCESS' but got '{content}'"
         )
-        print("SUCCESS: NIP-17 integration works flawlessly!")
+        print('SUCCESS: NIP-17 integration works flawlessly!')
     except asyncio.TimeoutError:
-        pytest.fail("Timeout: No reply received from agent within 60 seconds.")
+        pytest.fail('Timeout: No reply received from agent within 60 seconds.')
     finally:
         handler_task.cancel()
         await client.disconnect()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     try:
         asyncio.run(test_nip17_flow())
     except KeyboardInterrupt:
-        print("\nExiting.")
+        print('\nExiting.')

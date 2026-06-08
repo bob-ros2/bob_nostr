@@ -69,13 +69,13 @@ print(
 class SignerHandler(BaseHTTPRequestHandler):
     """HTTP Request Handler for the isolated Nostr Signer service."""
 
-    def log_message(self, format, *args):
+    def log_message(self, log_format, *args):
         """Log request messages to stderr."""
         sys.stderr.write(
             '%s - - [%s] %s\n' % (
                 self.address_string(),
                 self.log_date_time_string(),
-                format % args
+                log_format % args
             )
         )
 
