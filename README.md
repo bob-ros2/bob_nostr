@@ -57,7 +57,7 @@ You can run the agent natively on your host system if you have ROS 2 Humble (or 
 
 1. Ensure you clone the required sibling package dependencies into the `src/` directory of your ROS 2 workspace:
    * **[bob_llm](https://github.com/bob-ros2/bob_llm)**: The core LLM interface node.
-   * **[bob_launch](https://github.com/bob-ros2/bob_launch)**: The meta-launcher used to start and configure the brain node.
+   * **[bob_launch](https://github.com/bob-ros2/bob_launch)**: The ROS meta-launcher used to start and configure the agent or other ros nodes.
    ```bash
    cd path/to/your/ros2_ws/src
    git clone https://github.com/bob-ros2/bob_llm.git
