@@ -15,6 +15,7 @@ services:
       - AGENT_ID=${WORKER_NAME:-curator}-nostr-agent
       - ROS_NAMESPACE=/${WORKER_NAME:-curator}
       - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-55}
+      - BOB_LAUNCH_AUTOABORT=0
       - LLM_TOOL_INTERFACES=/ros2_ws/src/bob_llm/config/skill_tools.py
       - LLM_SKILL_DIR=/ros2_ws/src/bob_nostr/skills
       - NOSTR_SIGNER_URL=http://${WORKER_NAME:-curator}-nostr-signer:8080

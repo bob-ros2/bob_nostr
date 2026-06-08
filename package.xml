@@ -3,12 +3,13 @@
 <package format="3">
   <name>bob_nostr</name>
   <version>1.0.0</version>
-  <description>Nostr Integration for Bob Agent</description>
+  <description>Minimalist ROS 2 Nostr Agent with autonomous self-evolution capabilities.</description>
   <maintainer email="bobmeuchelm@gmail.com">Bob Ros</maintainer>
   <license>Apache-2.0</license>
 
   <url type="website">https://github.com/bob-ros2/bob_nostr</url>
   <url type="repository">https://github.com/bob-ros2/bob_nostr</url>
+  <url type="bugtracker">https://github.com/bob-ros2/bob_nostr/issues</url>
 
   <author email="bobmeuchelm@gmail.com">Bob Ros</author>
 

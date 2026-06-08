@@ -30,6 +30,7 @@ services:
       - AGENT_ID=${AGENT_ID:-nostr-agent}
       - ROS_NAMESPACE=${ROS_NAMESPACE:-/nostr}
       - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-55}
+      - BOB_LAUNCH_AUTOABORT=0
       - LLM_TOOL_INTERFACES=/ros2_ws/src/bob_llm/config/skill_tools.py
       - LLM_SKILL_DIR=/ros2_ws/src/bob_nostr/skills
     command: ros2 launch bob_launch generic.launch.py config:=/ros2_ws/src/bob_nostr/launch/base_launch.yaml
