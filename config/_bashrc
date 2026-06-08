@@ -1,0 +1,30 @@
+# ROS 2 Bash Configuration
+
+# Source ROS 2 Base
+if [ -f "/opt/ros/${ROS_DISTRO}/setup.bash" ]; then
+    source "/opt/ros/${ROS_DISTRO}/setup.bash"
+fi
+
+# Source Workspace (if built)
+if [ -f "/ros2_ws/install/setup.bash" ]; then
+    source "/ros2_ws/install/setup.bash"
+fi
+
+# Color Prompt
+export PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+
+# Aliases
+alias l='ls -CF'
+alias la='ls -A'
+alias ll='ls -alF'
+alias ls='ls --color=auto'
+alias lt='ls -ltr'
+
+NS=${ROS_NAMESPACE:-/nostr}
+
+alias chat="ros2 run bob_llm chat \
+--topic_in $NS/llm_prompt \
+--topic_out $NS/llm_stream \
+--topic_response $NS/llm_response \
+--topic_tools $NS/llm_tool_calls \
+--topic_reasoning $NS/llm_reasoning"

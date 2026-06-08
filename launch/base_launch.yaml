@@ -1,0 +1,47 @@
+# --- Bob Nostr Base Launch ---
+
+- &api_url "${LLM_API_URL}"
+- &base_ns "__ns:=${ROS_NAMESPACE:-/nostr}"
+- &log_level "debug"
+
+# Agent: The Core Consciousness (Deep Reasoning)
+- name: agent_brain
+  package: bob_llm
+  executable: llm
+  respawn: true
+  output: screen
+  parameters:
+    api_url: *api_url
+    api_key: "${LLM_API_KEY}"
+    api_model: "${LLM_API_MODEL}"
+    api_timeout: 180.0
+    system_prompt_file: "${LLM_SYSTEM_PROMPT_FILE:-//PKGSHARE:bob_nostr/prompts/agent.md}"
+    stream: true
+    max_tool_calls: 30
+    max_tokens: 6000
+    max_history_length: 25
+    temperature: 0.2
+    presence_penalty: 1.2
+    skill_dir: "/ros2_ws/src/bob_nostr/skills,/home/ros/agent/skills"
+    tool_interfaces: 
+       - "//PKGSHARE:bob_llm/config/skill_tools.py"
+       - "//PKGSHARE:bob_llm/config/ros_cli_tools.py"
+  arguments:
+    - --ros-args
+    - --log-level
+    - *log_level
+    - -r
+    - *base_ns
+
+# Nostr Client Bridge Node
+- name: nostr_bridge
+  package: bob_nostr
+  executable: nostr_bridge
+  respawn: true
+  output: screen
+  arguments:
+    - --ros-args
+    - --log-level
+    - info
+    - -r
+    - *base_ns

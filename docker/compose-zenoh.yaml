@@ -1,0 +1,49 @@
+# =====================================================================
+# Zenoh Bridge Configuration (Cross-Host ROS 2 Communication)
+# 
+# Usage on Raspberry Pi (Edge):
+#   docker compose -f compose-zenoh.yaml up edge -d
+#
+# Usage on Local PC (Dev):
+#   ZENOH_ROUTER_IP=bobn docker compose -f compose-zenoh.yaml up client -d
+# =====================================================================
+
+name: nostr-zenoh-bridge
+
+services:
+  # ---------------------------------------------------------
+  # EDGE MODE: Runs on the remote device (e.g., Raspberry Pi)
+  # ---------------------------------------------------------
+  edge:
+    image: eclipse/zenoh-bridge-ros2dds:latest
+    container_name: agent-zenoh-bridge
+    restart: unless-stopped
+    networks:
+      - nostr-net
+    ports:
+      # Expose the configured port to the host network so the client can connect
+      - "${ZENOH_PORT:-7447}:7447/tcp"
+    environment:
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-55}
+      - ROS_DISTRO=${ROS_DISTRO:-humble}
+    command: >
+      --listen tcp/0.0.0.0:7447
+
+  # ---------------------------------------------------------
+  # CLIENT MODE: Runs on the local PC (Developer Machine)
+  # ---------------------------------------------------------
+  client:
+    image: eclipse/zenoh-bridge-ros2dds:latest
+    container_name: zenoh-bridge-local
+    restart: unless-stopped
+    # Use host networking locally to discover all local ROS 2 nodes perfectly
+    network_mode: "host"
+    environment:
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-55}
+      - ROS_DISTRO=${ROS_DISTRO:-humble}
+    command: >
+      --connect tcp/${ZENOH_ROUTER_IP:-bobn}:${ZENOH_PORT:-7447}
+
+networks:
+  nostr-net:
+    external: true

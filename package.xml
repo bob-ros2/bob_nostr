@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>bob_nostr</name>
+  <version>1.0.0</version>
+  <description>Nostr Integration for Bob Agent</description>
+  <maintainer email="bobmeuchelm@gmail.com">Bob Ros</maintainer>
+  <license>Apache-2.0</license>
+
+  <url type="website">https://github.com/bob-ros2/bob_nostr</url>
+  <url type="repository">https://github.com/bob-ros2/bob_nostr</url>
+
+  <author email="bobmeuchelm@gmail.com">Bob Ros</author>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>bob_launch</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_test</test_depend>
+  <test_depend>python3-ament-cmake-test</test_depend>
+  <test_depend>ament_cmake_flake8</test_depend>
+  <test_depend>ament_cmake_pep257</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

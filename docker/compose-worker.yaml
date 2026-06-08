@@ -1,0 +1,69 @@
+name: nostr-worker-${WORKER_NAME:-curator}
+
+services:
+  # -- CORE: (Brain, Nostr Bridge & REPL) --
+  base:
+    image: bob-nostr:latest
+    container_name: ${WORKER_NAME:-curator}-nostr-agent
+    ports:
+      - "${BASE_HOST_PORT:-8001}:8000"
+    networks:
+      - nostr-net
+    env_file:
+      - ../.env.${WORKER_NAME:-curator}
+    environment:
+      - AGENT_ID=${WORKER_NAME:-curator}-nostr-agent
+      - ROS_NAMESPACE=/${WORKER_NAME:-curator}
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-55}
+      - LLM_TOOL_INTERFACES=/ros2_ws/src/bob_llm/config/skill_tools.py
+      - LLM_SKILL_DIR=/ros2_ws/src/bob_nostr/skills
+      - NOSTR_SIGNER_URL=http://${WORKER_NAME:-curator}-nostr-signer:8080
+    command: ros2 launch bob_launch generic.launch.py config:=/ros2_ws/src/bob_nostr/launch/base_launch.yaml
+    restart: on-failure
+    volumes:
+      - ../:/ros2_ws/src/bob_nostr:ro
+      - /dev/null:/ros2_ws/src/bob_nostr/.env.signer:ro
+      - /dev/null:/ros2_ws/src/bob_nostr/.env.signer.${WORKER_NAME:-curator}:ro
+      - /volume1/ros/nostr_agent_${WORKER_NAME:-curator}:/home/ros/agent
+      - /volume1/ros/nostr_agent_${WORKER_NAME:-curator}/tmp:/tmp
+      - ../config/_bashrc:/home/ros/.bashrc:ro
+
+  # -- NOSTR SIGNING SERVICE (ISOLATED) --
+  nostr-signer:
+    image: bob-nostr:latest
+    container_name: ${WORKER_NAME:-curator}-nostr-signer
+    ports:
+      - "127.0.0.1:${SIGNER_HOST_PORT:-8081}:8080"
+    networks:
+      - nostr-net
+    env_file:
+      - ../.env.signer.${WORKER_NAME:-curator}
+    volumes:
+      - ../:/ros2_ws/src/bob_nostr:ro
+    command: python3 /ros2_ws/src/bob_nostr/skills/nostr_memory/scripts/nostr_signer_service.py
+    restart: always
+
+  # -- REPL: HARDENED SANDBOX --
+  repl:
+    image: bob-nostr:latest
+    container_name: ${WORKER_NAME:-curator}-nostr-repl
+    networks:
+      - nostr-net
+    env_file:
+      - ../.env.${WORKER_NAME:-curator}
+    environment:
+      - ROS_NAMESPACE=/${WORKER_NAME:-curator}
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-55}
+    command: ros2 run bob_nostr repl --ros-args -r __ns:=/${WORKER_NAME:-curator}
+    restart: on-failure
+    volumes:
+      - ../:/ros2_ws/src/bob_nostr:ro
+      - /dev/null:/ros2_ws/src/bob_nostr/.env.signer:ro
+      - /dev/null:/ros2_ws/src/bob_nostr/.env.signer.${WORKER_NAME:-curator}:ro
+      - /volume1/ros/nostr_agent_${WORKER_NAME:-curator}/shared:/home/ros/agent/shared:rw
+      - /volume1/ros/nostr_agent_${WORKER_NAME:-curator}/tmp:/tmp
+      - ../config/_bashrc:/home/ros/.bashrc:ro
+
+networks:
+  nostr-net:
+    external: true

@@ -1,0 +1,84 @@
+server {
+    listen 8080;
+
+    # Global Streaming optimizations
+    tcp_nodelay on;
+    proxy_buffering off;
+    proxy_request_buffering off;
+    proxy_cache off;
+    proxy_set_header Connection "";
+    proxy_http_version 1.1;
+    chunked_transfer_encoding on;
+    proxy_read_timeout 600s;
+    proxy_send_timeout 600s;
+    keepalive_timeout 600s;
+
+    location /v1/ {
+        # Security & Speed: Disable ALL buffering layers
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_cache off;
+        proxy_set_header X-Accel-Buffering no;
+        proxy_ignore_headers "Expires" "Cache-Control" "Set-Cookie";
+        gzip off;
+
+        # Inject the API Key from the environment variable
+        proxy_set_header Authorization "Bearer ${UPSTREAM_API_KEY}";
+        proxy_set_header Content-Type "application/json";
+        
+        # Forward to the backend (DeepSeek OR local)
+        proxy_pass ${UPSTREAM_API_URL};
+        
+        # Handle SSL for remote backends
+        proxy_ssl_server_name on;
+        proxy_ssl_protocols TLSv1.2 TLSv1.3;
+        
+        # Preserve error messages from upstream
+        proxy_intercept_errors off;
+    }
+
+    location /props {
+        proxy_buffering off;
+        proxy_set_header Authorization "Bearer ${UPSTREAM_API_KEY}";
+        
+        set $upstream_url "${UPSTREAM_API_URL}";
+        set $upstream_base "";
+        if ($upstream_url ~* "^(https?://[^/]+)") {
+            set $upstream_base $1;
+        }
+        
+        resolver 127.0.0.11 valid=30s;
+        proxy_pass $upstream_base/props;
+    }
+
+    # Proxy SearXNG search requests
+    location /search {
+        proxy_pass ${SEARXNG_URL}/search;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Proxy Crawl4AI requests
+    location /crawl {
+        proxy_set_header Authorization "Bearer ${CRAWL4AI_API_KEY}";
+        proxy_pass ${CRAWL4AI_URL}/crawl;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Proxy Crawl4AI task status requests
+    location /task/ {
+        proxy_set_header Authorization "Bearer ${CRAWL4AI_API_KEY}";
+        proxy_pass ${CRAWL4AI_URL}/task/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+

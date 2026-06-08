@@ -1,0 +1,38 @@
+# ROS 2 Build Artifacts
+build/
+install/
+log/
+
+# Python Artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+nosetests.xml
+coverage.xml
+*.egg-info/
+.eggs/
+
+# Secrets and Local Configurations
+.env*
+!.env.template
+!.env.*.template
+
+# Model weights and heavy binaries
+models/
+[mM]odels/
+*.gguf
+*.mmproj
+*.bin
+*.pt
+*.safetensors
+
+# IDE and System Files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo

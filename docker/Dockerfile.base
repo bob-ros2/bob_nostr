@@ -1,0 +1,67 @@
+ARG ROS_DISTRO=humble
+FROM ros:${ROS_DISTRO}-ros-base
+
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    python3-pytest \
+    vim \
+    curl \
+    git \
+    ffmpeg \
+    ripgrep \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create ros user (UID 1000 to match typical user/Synology ID)
+RUN useradd -m -u 1000 -s /bin/bash ros
+
+# Set up PATH to include ros's local bin
+ENV PATH="/home/ros/.local/bin:${PATH}"
+
+# Switch to the non-root user
+USER ros
+WORKDIR /home/ros
+
+# -- Build the Workspace --
+USER root
+WORKDIR /ros2_ws
+
+ARG CACHE_BUST=1
+
+RUN echo "Cache bust: $CACHE_BUST" && \
+    git clone https://github.com/bob-ros2/bob_llm /ros2_ws/src/bob_llm && \
+    if [ -f /ros2_ws/src/bob_llm/requirements.txt ]; then pip3 install --no-cache-dir -r /ros2_ws/src/bob_llm/requirements.txt; fi
+
+RUN echo "Cache bust: $CACHE_BUST" && \
+    git clone https://github.com/bob-ros2/bob_launch /ros2_ws/src/bob_launch && \
+    if [ -f /ros2_ws/src/bob_launch/requirements.txt ]; then pip3 install --no-cache-dir -r /ros2_ws/src/bob_launch/requirements.txt; fi
+
+# Copy current local repo into workspace
+COPY . /ros2_ws/src/bob_nostr
+
+RUN if [ -f /ros2_ws/src/bob_nostr/requirements.txt ]; then pip3 install --no-cache-dir -r /ros2_ws/src/bob_nostr/requirements.txt; fi
+
+# Clean and Build
+RUN rm -rf /ros2_ws/build /ros2_ws/install /ros2_ws/log && \
+    . /opt/ros/${ROS_DISTRO}/setup.sh && \
+    colcon build --symlink-install --packages-select bob_llm bob_launch bob_nostr \
+    --event-handlers console_direct+
+
+# Secure the workspace - root owns everything, ros can only read/execute
+RUN chown -R root:root /ros2_ws
+
+# Deploy BashRC
+COPY ./config/_bashrc /root/.bashrc
+COPY ./config/_bashrc /home/ros/.bashrc
+RUN chown ros:ros /home/ros/.bashrc
+
+# Entrypoint
+RUN echo "#!/bin/bash\nsource /opt/ros/\${ROS_DISTRO}/setup.bash\nsource /ros2_ws/install/setup.bash\nexec \"\$@\"" > /ros_entrypoint.sh \
+    && chmod +x /ros_entrypoint.sh
+
+USER ros
+WORKDIR /home/ros
+
+ENTRYPOINT ["/ros_entrypoint.sh"]
+
+# Use bob_launch to orchestrate the YAML configuration
+CMD ["ros2", "launch", "bob_launch", "generic.launch.py", "config:=/ros2_ws/src/bob_nostr/launch/base_launch.yaml"]

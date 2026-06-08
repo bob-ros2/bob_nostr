@@ -1,0 +1,7 @@
+# Ignore everything in this skill directory by default
+*
+
+# Allow the following official files to be tracked
+!.gitignore
+!SKILL.md
+!scripts/
