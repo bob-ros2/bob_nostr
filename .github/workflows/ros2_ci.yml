@@ -1,0 +1,38 @@
+name: ROS 2 CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  LANG: en_US.UTF-8
+  ROS_DISTRO: humble
+  # Force Node 24 to suppress Node 20 deprecation warnings
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Block Firefox and Snapd (Speed up CI)
+        run: |
+          sudo apt-mark hold firefox
+          sudo apt-get purge -y snapd
+
+      - name: Setup ROS 2
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: ${{ env.ROS_DISTRO }}
+
+      - name: Build and Test
+        uses: ros-tooling/action-ros-ci@v0.3
+        with:
+          package-name: bob_nostr
+          target-ros2-distro: ${{ env.ROS_DISTRO }}
+          vcs-repo-file-url: ''
+          import-token: ${{ secrets.GITHUB_TOKEN }}
