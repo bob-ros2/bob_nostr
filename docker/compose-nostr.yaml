@@ -32,17 +32,6 @@ services:
     container_name: nostr-strudel
     ports:
       - "8780:80"
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        echo "Injecting local relays..."
-        for f in /usr/share/nginx/html/assets/*.js; do
-          if [ -f "$$f" ]; then
-            sed -i "s|\`wss://nos.lol\`|\`ws://bob2:8781\`,\`ws://bob2:8782\`,\`wss://nos.lol\`|g" "$$f"
-          fi
-        done
-        exec /docker-entrypoint.sh
     restart: unless-stopped
 
 volumes:
