@@ -1,0 +1,62 @@
+# =============================================================================
+# Default Relay Seed List – Known Nostr Relays
+# =============================================================================
+# This is a bootstrap list of known relays. The relay discovery system
+# will test, validate, and categorize these relays, then maintain
+# the full relay index as a relay-index Nostr memory type.
+# =============================================================================
+
+relays:
+  - url: "wss://nos.lol"
+    name: "nos.lol"
+    description: "High-performance public relay, NIP-11 compatible"
+    geo_hint: "US"
+    expected_trust: "trusted"
+
+  - url: "wss://relay.snort.social"
+    name: "Snort Social"
+    description: "Snort client relay, widely used"
+    geo_hint: "US"
+    expected_trust: "trusted"
+
+  - url: "wss://relay.damus.io"
+    name: "Damus"
+    description: "Damus client relay, well-maintained"
+    geo_hint: "US"
+    expected_trust: "trusted"
+
+  - url: "wss://relay.nostr.band"
+    name: "Nostr.band"
+    description: "Analytics relay, good indexing"
+    geo_hint: "US"
+    expected_trust: "unstable"
+
+  - url: "wss://cache1.primal.net"
+    name: "Primal Cache"
+    description: "Primal caching relay"
+    geo_hint: "US"
+    expected_trust: "unstable"
+
+  - url: "wss://purplepag.es"
+    name: "PurplePages"
+    description: "Discovery relay, specialized"
+    geo_hint: "DE"
+    expected_trust: "unstable"
+
+  - url: "wss://relay.nostr.wine"
+    name: "Nostr Wine"
+    description: "Paid relay with high retention"
+    geo_hint: "US"
+    expected_trust: "paywalled"
+
+  - url: "wss://offchain.pub"
+    name: "Offchain Pub"
+    description: "Community relay"
+    geo_hint: "US"
+    expected_trust: "unstable"
+
+# Trust-level definitions:
+#   trusted   – Reliably stores and returns events, good uptime, free
+#   unstable  – Intermittent availability or unknown retention
+#   local     – Self-hosted relay instance
+#   paywalled – Requires payment for access

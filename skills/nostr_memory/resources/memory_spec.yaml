@@ -1,0 +1,74 @@
+# =============================================================================
+# Agent Memory Type Specification
+# =============================================================================
+spec_version: "1.0.0"
+created: "2026-06-10"
+
+memory_types:
+  - name: relay-index
+    description: "Relay-Index mit Trust-Level, NIP-11-Parametern und Retention-Daten"
+    kind: 30001
+    d_tag: "agent:relay-index"
+    visibility: encrypted
+    serializable: true
+    content_format: yaml
+    encryption: nip44
+    chunk_size: 20000
+    tags:
+      d: "agent:relay-index"
+      t: "rli"
+      version: "1"
+
+  - name: session-journal
+    description: "Verschlüsselte Session-Journale"
+    kind: 30001
+    d_tag: "agent:journal:{date}"
+    visibility: encrypted
+    serializable: true
+    content_format: markdown
+    encryption: nip44
+    chunk_size: 20000
+    tags:
+      d: "agent:journal:{date}"
+      t: "sjl"
+      version: "1"
+
+  - name: agent-config
+    description: "Agent-Konfiguration (ein Event)"
+    kind: 30001
+    d_tag: "agent:config"
+    visibility: encrypted
+    serializable: false
+    content_format: yaml
+    encryption: nip44
+    chunk_size: null
+    tags:
+      d: "agent:config"
+      t: "acf"
+      version: "1"
+
+  - name: discovery-results
+    description: "Relay discovery scan results"
+    kind: 30001
+    d_tag: "agent:discovery:{date}"
+    visibility: encrypted
+    serializable: true
+    content_format: yaml
+    encryption: nip44
+    chunk_size: 20000
+    tags:
+      d: "agent:discovery:{date}"
+      t: "dis"
+      version: "1"
+
+serialization:
+  header_kind: 30001
+  chunk_kind: 30002
+  max_chunk_size: 20000
+  encoding: base64
+  id_generation: uuid4
+
+obfuscation:
+  algorithm: sha256
+  truncate: 8
+  encryption: nip44

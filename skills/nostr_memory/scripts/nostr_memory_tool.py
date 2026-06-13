@@ -421,8 +421,11 @@ class NostrMemoryClient:
         return event_id_hex
 
     async def fetch_events(self, kind: int = None, limit: int = 10,
-                           since: int = 0, authors: list = None,
-                           event_ids: list = None, decrypt: bool = True):
+                           since: int = 0, until: int = 0,
+                           authors: list = None,
+                           event_ids: list = None,
+                           tag_filter: list = None,
+                           decrypt: bool = True):
         """Retrieve events from relays (newest first)."""
         try:
             from nostr_sdk import Filter, Kind as NKind, EventId
@@ -438,8 +441,37 @@ class NostrMemoryClient:
             sk_filter = sk_filter.kind(NKind(kind))
         if since > 0:
             sk_filter = sk_filter.since(since)
+        if until > 0:
+            from nostr_sdk import Timestamp
+            sk_filter = sk_filter.until(Timestamp.from_secs(until))
+        if tag_filter:
+            from nostr_sdk import SingleLetterTag, Alphabet
+            for tag_entry in tag_filter:
+                if len(tag_entry) >= 2:
+                    tag_key = tag_entry[0]
+                    if len(tag_key) == 1 and tag_key.isalpha():
+                        alphabet_letter = getattr(Alphabet, tag_key.upper(), None)
+                        if alphabet_letter is not None:
+                            sk_filter = sk_filter.custom_tag(
+                                SingleLetterTag.lowercase(alphabet_letter),
+                                tag_entry[1]
+                            )
+                        else:
+                            print(
+                                f'[WARNING] Unknown single-letter tag "{tag_key}", '
+                                f'skipping.',
+                                file=sys.stderr
+                            )
+                    else:
+                        print(
+                            f'[WARNING] Invalid tag key "{tag_key}" — '
+                            f'must be a single letter. Skipping.',
+                            file=sys.stderr
+                        )
         if authors:
-            sk_filter = sk_filter.authors(authors)
+            from nostr_sdk import PublicKey
+            author_keys = [PublicKey.parse(a) for a in authors]
+            sk_filter = sk_filter.authors(author_keys)
         if event_ids:
             sdk_ids = []
             for eid in event_ids:
@@ -586,6 +618,12 @@ def parse_args():
                         help='Maximum number of matches in search')
     parser.add_argument('--since', type=int, default=0,
                         help='Unix timestamp – only newer events')
+    parser.add_argument('--until', type=int, default=0,
+                        help='Unix timestamp – only events older than this')
+    parser.add_argument('--authors', default='',
+                        help='Comma-separated author pubkeys (hex)')
+    parser.add_argument('--tag-filter', default='',
+                        help='JSON array of tag filters, e.g. \'[["t","ros2"]]\'')
     parser.add_argument('--relays', default='',
                         help='Comma-separated relay URLs (Override)')
     parser.add_argument('--json', action='store_true',
@@ -684,10 +722,44 @@ async def main_async():
                 sys.exit(1)
 
         elif args.action == 'search':
+            # Parse authors
+            author_list = None
+            if args.authors:
+                raw_authors = [a.strip() for a in args.authors.split(',') if a.strip()]
+                # Validate: hex pubkeys must be exactly 64 chars (32 bytes)
+                valid_authors = []
+                for a in raw_authors:
+                    if len(a) != 64:
+                        print(
+                            f'[ERROR] Invalid author pubkey length: '
+                            f'{len(a)} chars (need 64 hex chars / 32 bytes): '
+                            f'{a[:16]}...',
+                            file=sys.stderr
+                        )
+                        sys.exit(1)
+                    if not all(c in '0123456789abcdefABCDEF' for c in a):
+                        print(
+                            f'[ERROR] Invalid author pubkey (non-hex characters): '
+                            f'{a[:16]}...',
+                            file=sys.stderr
+                        )
+                        sys.exit(1)
+                    valid_authors.append(a)
+                author_list = valid_authors
+
+            # Parse tag filter
+            tag_list = None
+            if args.tag_filter:
+                import json as _json
+                tag_list = _json.loads(args.tag_filter)
+
             events = await client.fetch_events(
                 kind=args.kind,
                 limit=args.limit,
-                since=args.since
+                since=args.since,
+                until=args.until,
+                authors=author_list,
+                tag_filter=tag_list,
             )
             if not events:
                 print(f'🔍 No events of kind {args.kind} found.')
