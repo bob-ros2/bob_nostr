@@ -1,0 +1,27 @@
+FROM python:3.10-slim
+
+# Install minimal system dependencies
+# nostr-sdk often needs build-essential for compiling Rust/C extensions
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install the required Python packages
+RUN pip install --no-cache-dir nostr-sdk
+
+# Copy the signer service into the image
+# Note: The workspace path is relative to the project root,
+# but the Dockerfile will reside in the docker/ directory.
+# We must ensure the build context is correct.
+COPY ../skills/nostr_memory/scripts/nostr_signer_service.py .
+
+# Default environment variables
+ENV SIGNER_HOST=0.0.0.0
+ENV SIGNER_PORT=8080
+
+EXPOSE 8080
+
+# Start the service
+CMD ["python", "nostr_signer_service.py"]

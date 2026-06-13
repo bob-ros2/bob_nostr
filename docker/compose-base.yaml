@@ -42,21 +42,6 @@ services:
       - /volume1/ros/nostr_agent/tmp:/tmp
       - ../config/_bashrc:/home/ros/.bashrc:ro
 
-  # -- NOSTR SIGNING SERVICE (ISOLATED) --
-  nostr-signer:
-    image: bob-nostr:latest
-    container_name: nostr-signer
-    ports:
-      - "127.0.0.1:8080:8080"
-    networks:
-      - nostr-net
-    env_file:
-      - ../.env.signer
-    volumes:
-      - ../:/ros2_ws/src/bob_nostr:ro
-    command: python3 /ros2_ws/src/bob_nostr/skills/nostr_memory/scripts/nostr_signer_service.py
-    restart: always
-
   # -- REPL: HARDENED SANDBOX --
   repl:
     image: bob-nostr:latest

@@ -1,0 +1,27 @@
+name: nostr-signer
+
+services:
+  # -- NOSTR SIGNING SERVICE (ISOLATED) --
+  nostr-signer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.signer
+    image: bob-nostr-signer:latest
+    container_name: nostr-signer
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - nostr-net
+    secrets:
+      - nostr_agent_secret
+    environment:
+      - NOSTR_AGENT_SECRET=/run/secrets/nostr_agent_secret
+    restart: always
+
+secrets:
+  nostr_agent_secret:
+    file: /volume1/ros/secrets/nostr_agent_secret
+
+networks:
+  nostr-net:
+    external: true

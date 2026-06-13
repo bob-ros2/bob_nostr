@@ -43,25 +43,51 @@ except ImportError:
 
 PORT = int(os.environ.get('SIGNER_PORT', '8080'))
 HOST = os.environ.get('SIGNER_HOST', '0.0.0.0')
-SECRET_KEY_ENV = os.environ.get('NOSTR_AGENT_SECRET', '')
+SECRET_KEY_RAW = os.environ.get('NOSTR_AGENT_SECRET', '')
 
-if not SECRET_KEY_ENV:
+
+def get_secret_key(raw_value):
+    """
+    Retrieve the secret key from the provided raw value.
+
+    If the value is a valid file path, it reads the content from that file.
+    Otherwise, it treats the value as the secret key itself.
+    """
+    if not raw_value:
+        return None
+
+    # Check if it's a path to a file (e.g., a Docker secret)
+    if os.path.isfile(raw_value):
+        try:
+            with open(raw_value, 'r') as f:
+                return f.read().strip()
+        except Exception as e:
+            print(f'[ERROR] Could not read secret file {raw_value}: {e}', file=sys.stderr)
+            return None
+
+    return raw_value
+
+
+actual_secret = get_secret_key(SECRET_KEY_RAW)
+
+if not actual_secret:
     print(
-        '[WARNING] NOSTR_AGENT_SECRET not set. '
+        '[WARNING] NOSTR_AGENT_SECRET not set or file not found. '
         'Generating a temporary secret key for this run...',
         file=sys.stderr
     )
     KEYS = Keys.generate()
 else:
     try:
-        KEYS = Keys.parse(SECRET_KEY_ENV)
+        KEYS = Keys.parse(actual_secret)
     except Exception as e:
         print(f'[ERROR] Invalid NOSTR_AGENT_SECRET: {e}', file=sys.stderr)
         sys.exit(1)
 
+pubkey_bech32 = KEYS.public_key().to_bech32()
+truncated = pubkey_bech32[:7] + '...' + pubkey_bech32[-4:]
 print(
-    f'[INFO] Signer initialized for public key: '
-    f'{KEYS.public_key().to_bech32()}',
+    f'[INFO] Signer initialized for public key: {truncated}',
     file=sys.stderr
 )
 
