@@ -123,7 +123,11 @@ def test_setup_cfg_consistency():
     assert not missing, f'Missing setup.cfg registration for: {missing}'
 
     # Check: Valid targets
+    # Non-node executables (daemons, CLI tools) are allowed via this list
+    NON_NODE_EXECUTABLES = {'task_scheduler'}
     for name, target in entry_points.items():
+        if name in NON_NODE_EXECUTABLES:
+            continue
         module_name = target.split(':')[0].split('.')[-1]
         assert module_name.endswith('_node'), f'"{name}" points to non-node module.'
         file_path = os.path.join(SOURCE_DIR, f'{module_name}.py')

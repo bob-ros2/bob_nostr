@@ -1,0 +1,15 @@
+{
+  "_comment": "Default task definitions loaded on first scheduler start.",
+  "tasks": [
+    {
+      "task_id": "journal_6h",
+      "skill_name": "journal",
+      "script_path": "scripts/journal_writer.py",
+      "arguments": "--collect",
+      "trigger_type": "cron",
+      "trigger_value": "0 */6 * * *",
+      "enabled": false,
+      "tags": ["journal", "periodic"]
+    }
+  ]
+}

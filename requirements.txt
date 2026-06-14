@@ -1,3 +1,6 @@
 nostr_sdk
+apscheduler>=3.10,<4.0
+pydantic>=2.0
+pydantic-settings>=2.0
 pytest
 pytest-asyncio
