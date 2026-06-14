@@ -160,7 +160,27 @@ The `task_scheduler` provides a way for the agent to schedule autonomous, period
 
 This separation ensures that the scheduling logic is robust and runs as a dedicated ROS node, while the agent can easily manage tasks through a standardized skill interface.
 
-### 2. Usage via Agent Tools
+### 2. Execution Model
+
+When a task fires, the scheduler now uses **shell execution** (`asyncio.create_subprocess_shell`), so a single task can run **multiple commands** using shell operators (`&&`, `||`, `;`). This is especially useful to, for example, run a skill script and then log a message to the `chronology` skill.
+
+**Traditional mode** (with `--script-path`):
+```bash
+python3 /path/to/script.py --some-arg && python3 /path/to/chronology_cli.py log --message "done"
+```
+
+**Raw-shell mode** (without `--script-path` – the entire `--arguments` string is executed as-is):
+```bash
+execute_skill_script task_scheduler scripts/tools.py add \
+    --task-id raw_tick \
+    --skill-name "" \
+    --script-path "" \
+    --trigger-type interval \
+    --trigger-value "300" \
+    --arguments "python3 /path/to/job.py && python3 /path/to/chronology_cli.py log --message 'tick' --tags scheduler --level INFO"
+```
+
+### 3. Usage via Agent Tools
 
 The agent manages tasks by calling the `task_scheduler` skill. All commands are executed through `scripts/tools.py` within the skill directory.
 
@@ -189,6 +209,18 @@ execute_skill_script task_scheduler scripts/tools.py add \
     --trigger-value "3600" \
     --arguments "backup" \
     --tags "backup"
+```
+
+**Example: Chained task – run a job and log the result to chronology**
+```bash
+execute_skill_script task_scheduler scripts/tools.py add \
+    --task-id chained_with_log \
+    --skill-name my_skill \
+    --script-path scripts/my_job.py \
+    --trigger-type interval \
+    --trigger-value "3600" \
+    --arguments "do_work.py --option X && python3 /ros2_ws/src/bob_nostr/skills/chronology/scripts/chronology_cli.py log --message 'Task done' --tags scheduler --level INFO" \
+    --tags "chained,example"
 ```
 
 #### Managing Tasks

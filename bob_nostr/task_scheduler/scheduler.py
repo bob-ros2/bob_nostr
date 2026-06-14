@@ -262,7 +262,16 @@ class AgentTaskScheduler:
     # -- internal: task execution ------------------------------------------
 
     async def _fire_task(self, task: TaskConfig) -> None:
-        """Execute a task's skill script via subprocess."""
+        r"""Execute a task's skill script via subprocess.
+
+        Supports shell chaining (``&&``, ``||``, ``;``) so a single task can
+        run multiple commands — for example, run a skill script and then log a
+        message to the chronology skill::
+
+            python3 /path/to/job.py --collect \
+                && python3 /path/to/chronology_cli.py log \
+                    --message "Job done" --tags scheduler --level INFO
+        """
         logger.info('Firing task %s (skill=%s)', task.task_id, task.skill_name)
 
         # Allow test hooks
@@ -270,25 +279,43 @@ class AgentTaskScheduler:
             self._on_fire(task)
             return
 
-        # Resolve script path
-        script_abs = _resolve_skill_script(task.skill_name, task.script_path)
-        if script_abs is None:
-            logger.error(
-                'Task %s: script %s/%s not found - skipping.',
-                task.task_id, task.skill_name, task.script_path,
-            )
-            task.last_result = 'failure'
-            task.last_run = _now_iso()
-            await self._storage.save(task)
-            return
+        # --- Build a shell command string -----------------------------------
 
-        cmd = [sys.executable, script_abs]
-        if task.arguments:
-            cmd.extend(task.arguments.split())
+        if task.script_path:
+            # Traditional mode: resolve the script inside the skill directory.
+            script_abs = _resolve_skill_script(task.skill_name, task.script_path)
+            if script_abs is None:
+                logger.error(
+                    'Task %s: script %s/%s not found - skipping.',
+                    task.task_id, task.skill_name, task.script_path,
+                )
+                task.last_result = 'failure'
+                task.last_run = _now_iso()
+                await self._storage.save(task)
+                return
+
+            cmd_str = f'{sys.executable} {script_abs}'
+            if task.arguments:
+                cmd_str += f' {task.arguments}'
+        else:
+            # Raw-shell mode: arguments *is* the entire shell command.
+            # This allows arbitrary chaining without a skill script.
+            cmd_str = task.arguments
+            if not cmd_str:
+                logger.error(
+                    'Task %s: no script_path and no arguments - nothing to execute.',
+                    task.task_id,
+                )
+                task.last_result = 'failure'
+                task.last_run = _now_iso()
+                await self._storage.save(task)
+                return
+
+        # --- Execute via shell ----------------------------------------------
 
         try:
-            proc = await asyncio.create_subprocess_exec(
-                *cmd,
+            proc = await asyncio.create_subprocess_shell(
+                cmd_str,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )

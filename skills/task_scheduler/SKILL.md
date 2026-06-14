@@ -25,11 +25,21 @@ All task definitions are persisted in a **single JSON file** (path configurable 
 
 ### Execution Model
 
-When a task fires, the scheduler calls `subprocess.run()` on the target skill's script:
+When a task fires, the scheduler executes the command string via the system shell
+(``asyncio.create_subprocess_shell``).  This means **shell chaining operators**
+(``&&``, ``||``, ``;``) work in ``arguments``, so a single task can run **multiple
+commands in sequence**.
+
+**Traditional mode** (with ``script_path``):
 
 ```
-python3 /ros2_ws/src/bob_nostr/skills/{skill_name}/{script_path} {arguments}
+python3 /path/to/{script} {arguments_with_shell_chaining}
 ```
+
+**Raw-shell mode** (without ``script_path``): the entire ``arguments`` string is
+executed as-is, enabling arbitrary shell pipelines::
+
+    command1 && command2 || command3
 
 The scheduler looks for the script in two locations (checked in order):
 1. `/ros2_ws/src/bob_nostr/skills/{skill_name}/{script_path}` (core skills)
@@ -151,6 +161,29 @@ execute_skill_script task_scheduler scripts/tools.py add \
     --trigger-value "0 2 * * *" \
     --arguments "publish --input /tmp/backup.json" \
     --tags "backup"
+```
+
+**Example – chained task (script + chronology log):**
+```bash
+execute_skill_script task_scheduler scripts/tools.py add \
+    --task-id chained_with_log \
+    --skill-name my_skill \
+    --script-path scripts/my_job.py \
+    --trigger-type interval \
+    --trigger-value "3600" \
+    --arguments "do_work.py --option X && python3 /ros2_ws/src/bob_nostr/skills/chronology/scripts/chronology_cli.py log --message 'Task done' --tags scheduler --level INFO" \
+    --tags "chained,example"
+```
+
+**Example – raw-shell mode (no script_path – full shell command in arguments):**
+```bash
+execute_skill_script task_scheduler scripts/tools.py add \
+    --task-id raw_tick \
+    --skill-name "" \
+    --script-path "" \
+    --trigger-type interval \
+    --trigger-value "300" \
+    --arguments "python3 /path/to/job.py && python3 /ros2_ws/src/bob_nostr/skills/chronology/scripts/chronology_cli.py log --message '5min tick' --tags scheduler --level INFO"
 ```
 
 **Example – one-shot task in 5 minutes:**

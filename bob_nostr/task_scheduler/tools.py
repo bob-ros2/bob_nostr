@@ -13,18 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
+r"""
 Task Scheduler - CLI Tool API.
 
 This module is the primary interface for the LLM agent.  It is called via
 ``execute_skill_script`` with a subcommand and arguments.
 
 Exit codes:
-  0 - success
-  1 - error / task not found
+   0 - success
+   1 - error / task not found
 
 Usage examples (from the LLM's perspective):
 
+  # Simple task: run one skill script
   execute_skill_script task_scheduler tools.py add
       --task-id weekly_journal
       --skill-name journal
@@ -32,6 +33,28 @@ Usage examples (from the LLM's perspective):
       --trigger-value "0 */6 * * *"
       --arguments "--collect"
       --tags "journal,periodic"
+
+  # Chained task: run a script AND log to chronology
+  execute_skill_script task_scheduler tools.py add
+      --task-id chained_example
+      --skill-name my_skill
+      --trigger-type interval
+      --trigger-value "3600"
+      --arguments "main.py --do-work \\
+&& python3 /path/to/chronology_cli.py log \\
+    --message 'done' --tags scheduler --level INFO"
+      --tags "chained,example"
+
+  # Raw-shell task: no skill script, arguments is the full shell command
+  execute_skill_script task_scheduler tools.py add
+      --task-id raw_example
+      --skill-name ""
+      --script-path ""
+      --trigger-type interval
+      --trigger-value "300"
+      --arguments "python3 job.py \\
+&& python3 /path/to/chronology_cli.py log \\
+    --message 'tick' --tags scheduler --level INFO"
 
   execute_skill_script task_scheduler tools.py list
   execute_skill_script task_scheduler tools.py get --task-id weekly_journal
