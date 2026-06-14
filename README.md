@@ -146,3 +146,87 @@ Configured in `launch/base_launch.yaml`:
 * **`api_model`**: The target LLM model name.
 * **`system_prompt_file`**: System configuration markdown containing identity and safety instructions.
 * **`skill_dir`**: Comma-separated paths of core and custom skills directories.
+
+---
+
+## Task Scheduling
+
+The `task_scheduler` provides a way for the agent to schedule autonomous, periodic, or one-shot tasks. It is implemented as a two-part system:
+
+### 1. Architecture
+
+* **Core Engine (`bob_nostr/task_scheduler`)**: A ROS 2 package running as a background daemon. It manages the `APScheduler` instance, handles task persistence in a JSON file, and uses a file watcher to pick up changes.
+* **Skill Wrapper (`skills/task_scheduler`)**: A thin interface that allows the LLM agent to interact with the Core Engine via the `execute_skill_script` tool.
+
+This separation ensures that the scheduling logic is robust and runs as a dedicated ROS node, while the agent can easily manage tasks through a standardized skill interface.
+
+### 2. Usage via Agent Tools
+
+The agent manages tasks by calling the `task_scheduler` skill. All commands are executed through `scripts/tools.py` within the skill directory.
+
+#### Adding a Task
+To schedule a periodic task, use the `add` command.
+
+**Example: Schedule a journal entry every 6 hours (Cron)**
+```bash
+execute_skill_script task_scheduler scripts/tools.py add \
+    --task-id journal_6h \
+    --skill-name journal \
+    --script-path scripts/journal_writer.py \
+    --trigger-type cron \
+    --trigger-value "0 */6 * * *" \
+    --arguments "--collect" \
+    --tags "journal,periodic"
+```
+
+**Example: Schedule a memory backup every 3600 seconds (Interval)**
+```bash
+execute_skill_script task_scheduler scripts/tools.py add \
+    --task-id memory_backup_hourly \
+    --skill-name nostr_memory \
+    --script-path scripts/cli_agent_memory.py \
+    --trigger-type interval \
+    --trigger-value "3600" \
+    --arguments "backup" \
+    --tags "backup"
+```
+
+#### Managing Tasks
+* **List all tasks**:
+  ```bash
+  execute_skill_script task_scheduler scripts/tools.py list
+  ```
+* **Suspend a task**:
+  ```bash
+  execute_skill_script task_scheduler scripts/tools.py suspend --task-id journal_6h
+  ```
+* **Resume a task**:
+  ```bash
+  execute_skill_script task_scheduler scripts/tools.py resume --task-id journal_6h
+  ```
+* **Remove a task**:
+  ```bash
+  execute_skill_script task_scheduler scripts/tools.py remove --task-id journal_6h
+  ```
+* **Check scheduler status**:
+  ```bash
+  execute_skill_script task_scheduler scripts/tools.py status
+  ```
+
+### 3. Configuration
+
+Task definitions are persisted in a JSON file. The location of this file is controlled by the `SCHEDULER_TASKS_FILE` environment variable.
+
+**Default Task Schema:**
+```json
+{
+  "task_id": "example_task",
+  "skill_name": "journal",
+  "script_path": "scripts/writer.py",
+  "arguments": "--option",
+  "trigger_type": "cron",
+  "trigger_value": "0 * * * *",
+  "enabled": true,
+  "tags": ["example"]
+}
+```

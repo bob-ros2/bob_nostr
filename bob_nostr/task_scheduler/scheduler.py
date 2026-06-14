@@ -215,6 +215,7 @@ class AgentTaskScheduler:
             id=job_id,
             name=task.task_id,
             replace_existing=True,
+            misfire_grace_time=60,
         )
 
     def _unregister_task(self, task_id: str) -> None:
@@ -323,6 +324,16 @@ class AgentTaskScheduler:
 
         task.last_run = _now_iso()
         await self._storage.save(task)
+
+        # Bug 1 fix: auto-disable successfully executed one-shot tasks so the
+        # file-watcher never re-registers them on the next poll cycle.
+        if task.trigger_type == 'once' and task.last_result == 'success':
+            logger.info(
+                'OneShot task %s completed – disabling to prevent re-queue.',
+                task.task_id,
+            )
+            task.enabled = False
+            await self._storage.save(task)
 
     # -- internal: file watcher --------------------------------------------
 
