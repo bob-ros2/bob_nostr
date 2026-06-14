@@ -1,0 +1,28 @@
+name: nostr-redis
+
+networks:
+  nostr-net:
+    external: true
+
+#volumes:
+#  nostr-redis-data:
+
+services:
+  redis-server:
+    image: redis:alpine
+    container_name: nostr-redis
+    restart: unless-stopped
+    networks:
+      - nostr-net
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      #- nostr-redis-data:/data
+      - /volume1/ros/nostr_agent/redis:/data/persist
+    command: >
+      redis-server
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --appendonly yes
+      --appendfsync everysec
