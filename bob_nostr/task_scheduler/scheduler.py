@@ -262,7 +262,8 @@ class AgentTaskScheduler:
     # -- internal: task execution ------------------------------------------
 
     async def _fire_task(self, task: TaskConfig) -> None:
-        r"""Execute a task's skill script via subprocess.
+        r"""
+        Execute a task's skill script via subprocess.
 
         Supports shell chaining (``&&``, ``||``, ``;``) so a single task can
         run multiple commands — for example, run a skill script and then log a
