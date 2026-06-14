@@ -14,14 +14,14 @@
 # limitations under the License.
 
 """
-Task Scheduler – CLI Tool API.
+Task Scheduler - CLI Tool API.
 
 This module is the primary interface for the LLM agent.  It is called via
 ``execute_skill_script`` with a subcommand and arguments.
 
 Exit codes:
-  0 – success
-  1 – error / task not found
+  0 - success
+  1 - error / task not found
 
 Usage examples (from the LLM's perspective):
 
@@ -65,7 +65,7 @@ logger = logging.getLogger('task_scheduler.tools')
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog='tools.py',
-        description='Task Scheduler – Tool API for the LLM agent',
+        description='Task Scheduler - Tool API for the LLM agent',
     )
     sub = p.add_subparsers(dest='command', required=True)
 

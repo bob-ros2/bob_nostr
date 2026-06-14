@@ -33,6 +33,13 @@
     - -r
     - *base_ns
 
+# Task scheduler
+- name: task_scheduler
+  package: bob_nostr
+  executable: task_scheduler
+  respawn: true
+  output: screen
+
 # Nostr Client Bridge Node
 - name: nostr_bridge
   package: bob_nostr

@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""scripts package – contains the scheduler daemon entry point."""
+"""scripts package - contains the scheduler daemon entry point."""

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Task Scheduler Daemon – Entry point for the background process.
+Task Scheduler Daemon - Entry point for the background process.
 
 Starts the AgentTaskScheduler, monitors the PID file, and handles POSIX
 signals for graceful shutdown / reload.
@@ -24,9 +24,9 @@ Usage:
   ros2 run bob_nostr task_scheduler --status  # print status from running daemon
 
 Signals:
-  SIGTERM / SIGINT  – graceful shutdown
-  SIGHUP            – reload tasks.json
-  SIGUSR1           – print status to stderr
+  SIGTERM / SIGINT  - graceful shutdown
+  SIGHUP            - reload tasks.json
+  SIGUSR1           - print status to stderr
 """
 
 import argparse
@@ -107,7 +107,7 @@ class Daemon:
         logger.info('Daemon starting (PID %d).', os.getpid())
 
         await self._scheduler.start()
-        logger.info('Daemon ready – waiting for signals.')
+        logger.info('Daemon ready - waiting for signals.')
 
         try:
             await self._shutdown_event.wait()
@@ -123,12 +123,12 @@ class Daemon:
         self._shutdown_event.set()
 
     def reload(self) -> None:
-        """SIGHUP handler – re-read tasks.json."""
-        logger.info('SIGHUP received – reloading tasks...')
+        """SIGHUP handler - re-read tasks.json."""
+        logger.info('SIGHUP received - reloading tasks...')
         asyncio.create_task(self._scheduler._storage.reload())  # noqa
 
     def print_status(self) -> None:
-        """SIGUSR1 handler – write runtime status to stderr."""
+        """SIGUSR1 handler - write runtime status to stderr."""
         self._scheduler.get_status()
 
 
@@ -139,13 +139,15 @@ class Daemon:
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog='task_scheduler',
-        description='Task Scheduler Daemon – ROS 2 executable',
+        description='Task Scheduler Daemon - ROS 2 executable',
     )
     parser.add_argument(
         '--status', action='store_true',
         help='Print scheduler status and exit',
     )
-    args = parser.parse_args()
+    # Use parse_known_args so that ROS 2 arguments (--ros-args, -r __node:=…)
+    # are silently ignored instead of causing a fatal error.
+    args, _ = parser.parse_known_args()
 
     if args.status:
         _print_status_from_pid()

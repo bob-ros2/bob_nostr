@@ -1,5 +1,13 @@
 name: nostr-agent
 
+secrets:
+  api-key-secret:
+    file: /volume1/ros/secrets/deepseek_secret
+
+networks:
+  nostr-net:
+    external: true
+
 services:
   # -- GATEWAY: API SECURE PROXY --
   api-gateway:
@@ -9,8 +17,17 @@ services:
       - nostr-net
     env_file:
       - ../.env
+    secrets:
+      - api-key-secret
     volumes:
       - ../config/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        UPSTREAM_API_KEY="$(cat /run/secrets/api-key-secret | tr -d '\n\r')"
+        export UPSTREAM_API_KEY
+        exec /docker-entrypoint.sh nginx -g "daemon off;"
     restart: always
 
   # -- CORE: (Brain, Nostr Bridge & REPL) --
@@ -61,7 +78,3 @@ services:
       - /volume1/ros/nostr_agent/shared:/home/ros/agent/shared:rw
       - /volume1/ros/nostr_agent/tmp:/tmp
       - ../config/_bashrc:/home/ros/.bashrc:ro
-
-networks:
-  nostr-net:
-    external: true

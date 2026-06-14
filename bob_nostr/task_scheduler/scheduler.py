@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Agent Task Scheduler – Core Scheduling Engine.
+Agent Task Scheduler - Core Scheduling Engine.
 
 Uses APScheduler's AsyncIOScheduler to manage cron, interval, and one-shot
 triggers.  Task definitions are loaded from a JSON file (via TaskStorage)
@@ -235,7 +235,7 @@ class AgentTaskScheduler:
             # Standard 5-field cron expression
             parts = tval.strip().split()
             if len(parts) != 5:
-                msg = f'Invalid cron expression {tval!r} – expected 5 fields'
+                msg = f'Invalid cron expression {tval!r} - expected 5 fields'
                 raise ValueError(
                     msg,
                 )
@@ -273,7 +273,7 @@ class AgentTaskScheduler:
         script_abs = _resolve_skill_script(task.skill_name, task.script_path)
         if script_abs is None:
             logger.error(
-                'Task %s: script %s/%s not found – skipping.',
+                'Task %s: script %s/%s not found - skipping.',
                 task.task_id, task.skill_name, task.script_path,
             )
             task.last_result = 'failure'

@@ -107,7 +107,7 @@ class TaskStorage:
     async def _read_file(self) -> dict[str, TaskConfig]:
         """Parse the JSON file and return a dict keyed by task_id."""
         if not os.path.isfile(self._filepath):
-            logger.info('Tasks file %s not found – starting empty.', self._filepath)
+            logger.info('Tasks file %s not found - starting empty.', self._filepath)
             return {}
 
         try:

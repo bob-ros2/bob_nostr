@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""bob_nostr.task_scheduler – ROS 2 integrated task scheduling package."""
+"""bob_nostr.task_scheduler - ROS 2 integrated task scheduling package."""

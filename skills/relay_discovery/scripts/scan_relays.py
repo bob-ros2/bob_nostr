@@ -34,9 +34,10 @@ from typing import Any, Dict, List, Optional
 import urllib.request
 
 from nostr_sdk import (
-    Client, Event, Filter, Keys, Kind as NKind,
-    NostrSigner, RelayUrl, Timestamp
+    Client, EventBuilder, EventId, Filter, Keys, Kind as NKind,
+    NostrSigner, RelayUrl, Tag,
 )
+from nostr_sdk.nostr_sdk import Duration
 
 
 def _parse_env(env_path: str) -> None:
@@ -178,14 +179,12 @@ async def test_relay(client: Client, relay_url: str, timeout: int) -> Dict[str, 
     })
 
     dummy_keys = Keys.generate()
-    test_event = Event(
-        kind=NKind(1),
-        content=test_content,
-        tags=[['t', 'persistence_test'], ['expiration', str(int(time.time()) + 300)]],
-        keys=dummy_keys,
-        created_at=Timestamp.now()
-    )
-    signed_event = test_event.sign_hash()
+    sdk_tags = [
+        Tag.parse(['t', 'persistence_test']),
+        Tag.parse(['expiration', str(int(time.time()) + 300)])
+    ]
+    builder = EventBuilder(NKind(1), test_content).tags(sdk_tags)
+    signed_event = builder.sign_with_keys(dummy_keys)
 
     try:
         # Set a shorter timeout for the actual relay operations
@@ -198,12 +197,13 @@ async def test_relay(client: Client, relay_url: str, timeout: int) -> Dict[str, 
 
         # Retrieve the event back
         try:
-            f = Filter().kind(NKind(1)).id(event_id)
+            event_id_obj = EventId.parse(event_id)
+            f = Filter().kind(NKind(1)).id(event_id_obj)
             retrieved_events = await asyncio.wait_for(
-                client.get_events_of([f], 3 * timeout, False),
+                client.fetch_events(f, Duration(seconds=3 * timeout)),
                 timeout=timeout
             )
-            for re in retrieved_events:
+            for re in retrieved_events.to_vec():
                 if re.id().to_hex() == event_id:
                     result['retrieved'] = True
                     break

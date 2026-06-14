@@ -76,5 +76,5 @@ class SchedulerSettings:
     skill_root: str = field(default_factory=lambda: os.path.dirname(os.path.abspath(__file__)))
 
 
-# Global singleton – imported by other modules
+# Global singleton - imported by other modules
 settings = SchedulerSettings()
