@@ -28,6 +28,7 @@ import asyncio
 from datetime import datetime, timezone
 import json
 import os
+import re
 import sys
 import time
 from typing import Any, Dict, List, Optional
@@ -40,8 +41,28 @@ from nostr_sdk import (
 from nostr_sdk.nostr_sdk import Duration
 
 
+def _expand_vars(val: str) -> str:
+    """
+    Expand $VAR and ${VAR} references using current os.environ values.
+
+    Supports:
+      - $VARNAME          (simple form, ends at first non-identifier char)
+      - ${VARNAME}        (braced form)
+    """
+    def _replacer(m):
+        name = m.group(1) or m.group(2)
+        return os.environ.get(name, '')
+
+    pattern = r'\$\{([^}]+)\}|\$([A-Za-z_][A-Za-z0-9_]*)'
+    return re.sub(pattern, _replacer, val)
+
+
 def _parse_env(env_path: str) -> None:
-    """Parse key-value pairs from an env file and set them in os.environ."""
+    """
+    Parse key-value pairs from an env file and set them in os.environ.
+
+    Supports $VAR and ${VAR} expansion using previously parsed values.
+    """
     try:
         with open(env_path, 'r', encoding='utf-8') as f:
             for line in f:
@@ -53,6 +74,7 @@ def _parse_env(env_path: str) -> None:
                     key = key.strip()
                     val = val.strip().strip('\'"')
                     if key:
+                        val = _expand_vars(val)
                         os.environ[key] = val
     except Exception:
         pass
@@ -203,8 +225,8 @@ async def test_relay(client: Client, relay_url: str, timeout: int) -> Dict[str, 
                 client.fetch_events(f, Duration(seconds=3 * timeout)),
                 timeout=timeout
             )
-            for re in retrieved_events.to_vec():
-                if re.id().to_hex() == event_id:
+            for ev in retrieved_events.to_vec():
+                if ev.id().to_hex() == event_id:
                     result['retrieved'] = True
                     break
         except asyncio.TimeoutError:

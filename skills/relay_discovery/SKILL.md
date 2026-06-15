@@ -107,7 +107,7 @@ execute_skill_script relay_discovery scripts/publish_discovery.py \
 | `--trust` | string | none | Filter by trust level (list command) |
 | `--online` | flag | false | Show only online relays (list command) |
 | `--input` / `-i` | string | required | Input JSON file (merge command) |
-| `--output` / `-o` | string | auto | Output path (merge command) |
+| `--output` / `-o` | string | `/home/ros/agent/relay_index.yaml` | Output path (merge command) |
 
 ### `scripts/publish_discovery.py`
 | Argument | Type | Default | Description |

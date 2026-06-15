@@ -63,7 +63,7 @@ def resolve_geo(hostname: str, timeout: int = 5) -> Dict[str, Optional[str]]:
     try:
         api_url = (
             f'http://ip-api.com/json/{ip}?fields='
-            'country,countryCode,regionName,city,lat,lon,isp,org'
+            'status,country,countryCode,regionName,city,lat,lon,isp,org'
         )
         req = urllib.request.Request(api_url, headers={'User-Agent': 'nostr-relay-scanner/1.0'})
         with urllib.request.urlopen(req, timeout=timeout) as resp:

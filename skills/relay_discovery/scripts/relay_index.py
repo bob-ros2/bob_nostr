@@ -30,14 +30,12 @@ from typing import Any, Dict, List
 import yaml
 
 
-DEFAULT_INDEX_PATH = os.path.join(
-    os.path.dirname(__file__), '..', 'resources', 'relay_index.yaml'
-)
+RELAY_INDEX_DEFAULT = os.path.expanduser('/home/ros/agent/relay_index.yaml')
 
 
 def load_index(path: str = None) -> Dict[str, Any]:
     """Load the relay index from a local YAML file."""
-    filepath = Path(path or DEFAULT_INDEX_PATH).resolve()
+    filepath = Path(path or RELAY_INDEX_DEFAULT).resolve()
 
     if filepath.exists():
         with open(filepath, 'r', encoding='utf-8') as f:
@@ -59,7 +57,7 @@ def load_index(path: str = None) -> Dict[str, Any]:
 
 def save_index(index: Dict[str, Any], path: str = None) -> str:
     """Save the relay index to a local YAML file."""
-    filepath = Path(path or DEFAULT_INDEX_PATH).resolve()
+    filepath = Path(path or RELAY_INDEX_DEFAULT).resolve()
     index['updated'] = datetime.now(timezone.utc).isoformat()
     filepath.parent.mkdir(parents=True, exist_ok=True)
     with open(filepath, 'w', encoding='utf-8') as f:
@@ -179,7 +177,7 @@ def main():
                          help='JSON scan results file from scan_relays.py')
     p_merge.add_argument('--output', '-o', default=None,
                          help='Output path for updated index '
-                         '(default: resources/relay_index.yaml)')
+                         '(default: /home/ros/agent/relay_index.yaml)')
 
     sub.add_parser('trusted', help='List only trusted relays')
 

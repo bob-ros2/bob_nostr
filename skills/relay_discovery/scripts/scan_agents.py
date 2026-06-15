@@ -13,12 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Scan Nostr relays to identify potential autonomous agents and bots."""
+"""
+Scan Nostr relays to identify potential autonomous agents and bots.
+
+With --save, discovered agents are automatically imported into the
+agent_contacts contact list (Redis) and optionally published as
+Kind 3 follow-list events via the signer service.
+
+Usage:
+    python3 scan_agents.py --limit 10 --timeout 45 --save
+    python3 scan_agents.py --limit 10 --timeout 45 --save --publish
+"""
 
 import argparse
 import asyncio
 import json
 import os
+import re
 import sys
 import time
 from typing import Dict, List
@@ -38,13 +49,46 @@ DEFAULT_RELAYS = [
 
 AGENT_TAGS = ['agent', 'bot', 'ai', 'autonomous']
 
+# Path setup for importing agent_contacts modules
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_RELAY_DISCOVERY_DIR = os.path.dirname(_SCRIPT_DIR)
+_SKILLS_DIR = os.path.dirname(_RELAY_DISCOVERY_DIR)
+_AGENT_CONTACTS_DIR = os.path.join(_SKILLS_DIR, 'agent_contacts', 'scripts')
+if _AGENT_CONTACTS_DIR not in sys.path:
+    sys.path.insert(0, _AGENT_CONTACTS_DIR)
+
 # Tracking for frequency analysis
 pubkey_history: Dict[str, List[float]] = {}
 found_agents = set()
 
 
+def _expand_vars(val: str) -> str:
+    """
+    Expand $VAR and ${VAR} references using current os.environ values.
+
+    Supports two forms:
+      - $VARNAME       (simple — ends at first non-identifier char)
+      - ${VARNAME}     (braced — allows any chars inside braces)
+    """
+    def _replacer(m):
+        name = m.group(1) or m.group(2)
+        return os.environ.get(name, '')
+
+    # Match ${VARNAME} first, then $VARNAME (simple)
+    pattern = r'\$\{([^}]+)\}|\$([A-Za-z_][A-Za-z0-9_]*)'
+    return re.sub(pattern, _replacer, val)
+
+
 def _parse_env(env_path):
-    """Parse key-value pairs from an env file and set them in os.environ."""
+    """
+    Parse key-value pairs from an env file and set them in os.environ.
+
+    Supports:
+      - Standard KEY=VALUE lines
+      - Variable references: $VAR and ${VAR} are expanded using previously
+        parsed values and os.environ
+      - Strips single and double quotes around values
+    """
     try:
         with open(env_path, 'r', encoding='utf-8') as f:
             for line in f:
@@ -56,6 +100,8 @@ def _parse_env(env_path):
                     key = key.strip()
                     val = val.strip().strip('\'"')
                     if key:
+                        # Expand $VAR / ${VAR} references before storing
+                        val = _expand_vars(val)
                         os.environ[key] = val
     except Exception:
         pass
@@ -103,6 +149,14 @@ async def main():
         help='Min events in window to flag as agent'
     )
     parser.add_argument('--timeout', type=int, default=45, help='Scan timeout in seconds')
+    parser.add_argument(
+        '--save', action='store_true',
+        help='Save discovered agents to agent_contacts contact list'
+    )
+    parser.add_argument(
+        '--publish', action='store_true',
+        help='Also publish Kind 3 follow list after saving (implies --save)'
+    )
     args = parser.parse_args()
 
     # Resolve relays from env variable
@@ -225,6 +279,60 @@ async def main():
 
     print('\n--- DISCOVERY RESULTS ---')
     print(json.dumps(result, indent=2))
+
+    # --save: import discovered agents into contact list
+    if args.save or args.publish:
+        _save_agents_to_contacts(found_agents, args.publish)
+
+
+def _save_agents_to_contacts(found_agents: set, do_publish: bool = False):
+    """Import discovered agents into the agent_contacts contact list."""
+    try:
+        from agent_contacts_db import AgentContactsDB, AgentContactsError
+        from nostr_publisher import NostrPublisher, NostrPublisherError
+    except ImportError as e:
+        print(f'[!] Cannot import agent_contacts modules: {e}', file=sys.stderr)
+        print('[!] Make sure agent_contacts skill is installed.', file=sys.stderr)
+        return
+
+    db = AgentContactsDB()
+    pub = NostrPublisher() if do_publish else None
+
+    saved_count = 0
+    for pubkey in sorted(found_agents):
+        try:
+            name = f'discovered_{pubkey[:8]}'
+            is_new = db.add_agent(
+                pubkey=pubkey,
+                name=name,
+                relays=[],
+            )
+            if is_new:
+                saved_count += 1
+                print(f'[+] Saved to contacts: {pubkey[:16]}... ({name})')
+            else:
+                print(f'[-] Already in contacts: {pubkey[:16]}...')
+        except AgentContactsError as e:
+            print(f'[!] Error saving {pubkey[:16]}...: {e}', file=sys.stderr)
+
+    if saved_count > 0:
+        print(f'[*] {saved_count} new agent(s) added to contact list.')
+
+    # --publish: update Kind 3 on relays
+    if do_publish and pub:
+        try:
+            all_agents = db.list_agents()
+            result = pub.publish_kind3(all_agents)
+            print(
+                f'[*] Kind 3 published | Event: {result["event_id"][:16]}... '
+                f'| Relays: {result["relay_count"]} | Follows: {result["agent_count"]}'
+            )
+        except NostrPublisherError as e:
+            print(f'[!] Kind 3 publish failed: {e}', file=sys.stderr)
+        except Exception as e:
+            print(f'[!] Publish error: {e}', file=sys.stderr)
+
+    db.close()
 
 
 if __name__ == '__main__':
