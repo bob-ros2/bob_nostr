@@ -5,7 +5,7 @@ version: "3.0.0"
 category: "memory"
 ---
 
-# Nostr Memory Skill (Merged)
+# Nostr Memory Skill
 
 ## Goal
 Establish a persistent, censorship-resistant, and decentralized memory for the agent based on the Nostr protocol. Two operation modes are available: **simple** single-event storage and **serialized** multi-event storage for large data.
