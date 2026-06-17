@@ -6,7 +6,7 @@ created: "2026-06-10"
 
 memory_types:
   - name: relay-index
-    description: "Relay-Index mit Trust-Level, NIP-11-Parametern und Retention-Daten"
+    description: "Relay index with trust level, NIP-11 parameters, and retention data"
     kind: 30001
     d_tag: "agent:relay-index"
     visibility: encrypted
@@ -20,7 +20,7 @@ memory_types:
       version: "1"
 
   - name: session-journal
-    description: "Verschlüsselte Session-Journale"
+    description: "Encrypted session journals"
     kind: 30001
     d_tag: "agent:journal:{date}"
     visibility: encrypted
@@ -34,7 +34,7 @@ memory_types:
       version: "1"
 
   - name: agent-config
-    description: "Agent-Konfiguration (ein Event)"
+    description: "Agent config (single event)"
     kind: 30001
     d_tag: "agent:config"
     visibility: encrypted
