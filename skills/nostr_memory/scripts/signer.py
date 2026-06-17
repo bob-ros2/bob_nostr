@@ -24,7 +24,7 @@ SIGNER_URL = os.environ.get('NOSTR_SIGNER_URL', 'http://nostr-signer:8080')
 
 
 class SignerClient:
-    """HTTP-Client zum isolierten Nostr-Signer."""
+    """HTTP client for the isolated Nostr signer."""
 
     def __init__(self, url: str = SIGNER_URL):
         self.url = url.rstrip('/')

@@ -40,7 +40,7 @@ class MemoryEvent:
 
 
 def obfuscate_tag(value: str) -> str:
-    """Deterministischer Hash (SHA256, 8 Zeichen hex) zur Tag-Obfuskation."""
+    """Deterministic hash (SHA256, 8 hex chars) for tag obfuscation."""
     cfg = get_obfuscation_config()
     truncate = cfg.get('truncate', 8)
     return hashlib.sha256(value.encode()).hexdigest()[:truncate]
@@ -60,7 +60,7 @@ def _make_memory_event(signer_response: dict) -> MemoryEvent:
 
 
 class MemoryEncoder:
-    """Enkodiert Daten in Nostr-Events nach Memory-Type-Spezifikation."""
+    """Encodes data into Nostr events per memory type specification."""
 
     def __init__(self, signer_client: Optional[SignerClient] = None):
         self.signer = signer_client or SignerClient()
@@ -75,7 +75,7 @@ class MemoryEncoder:
         if our_pubkey is None and encrypt:
             our_pubkey = self.signer.get_public_key()
 
-        # Content serialisieren
+        # Serialize content
         if isinstance(data, dict):
             if mt.get('content_format') == 'yaml':
                 content = yaml.dump(data, default_flow_style=False, allow_unicode=True)
@@ -165,7 +165,7 @@ class MemoryEncoder:
 
 
 class MemoryDecoder:
-    """Dekodiert Nostr-Events zurück in lesbare Daten."""
+    """Decodes Nostr events back into readable data."""
 
     def __init__(self, signer_client: Optional[SignerClient] = None):
         self.signer = signer_client or SignerClient()
