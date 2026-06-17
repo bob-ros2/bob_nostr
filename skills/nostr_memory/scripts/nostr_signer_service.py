@@ -31,8 +31,8 @@ import sys
 try:
     from nostr_sdk import (
         EventBuilder, Keys, Kind as NKind, Nip44Version, PublicKey, Tag,
-        nip04_decrypt, nip04_encrypt, nip44_decrypt, nip44_encrypt,
-        UnwrappedGift, gift_wrap, NostrSigner, Event
+        Timestamp, nip04_decrypt, nip04_encrypt, nip44_decrypt,
+        nip44_encrypt, UnwrappedGift, gift_wrap, NostrSigner, Event
     )
 except ImportError:
     print(
@@ -350,7 +350,7 @@ class SignerHandler(BaseHTTPRequestHandler):
 
                 # Create rumor (Kind 14)
                 rumor_builder = EventBuilder.private_msg_rumor(receiver_pubkey, content)
-                rumor = rumor_builder.build(KEYS.public_key())
+                rumor = rumor_builder.custom_created_at(Timestamp.now()).build(KEYS.public_key())
 
                 # Wrap it using our private key / signer
                 async def wrap_coro():

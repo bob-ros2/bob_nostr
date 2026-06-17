@@ -32,6 +32,8 @@ services:
     container_name: nostr-strudel
     ports:
       - "8780:80"
+    networks:
+      - nostr-net
     restart: unless-stopped
 
 volumes:

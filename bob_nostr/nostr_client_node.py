@@ -36,8 +36,8 @@ from std_msgs.msg import String
 # Import nostr_sdk
 try:
     from nostr_sdk import (
-        Client, Filter, HandleNotification, Keys, Kind as NKind, PublicKey,
-        RelayUrl, Timestamp
+        Alphabet, Client, Filter, HandleNotification, Keys, Kind as NKind,
+        PublicKey, RelayUrl, SingleLetterTag, Timestamp
     )
 except ImportError:
     print(
@@ -178,13 +178,24 @@ class NostrBridgeNode(Node):
         # Since Gift Wraps are backdated by up to 2-3 days, we subscribe with a margin.
         # We will filter out older events inside the incoming handler using self.node_start_time.
         since_time = Timestamp.from_secs(self.node_start_time.as_secs() - 259200)  # 3 days ago
-        subscribe_filter = Filter().kinds(
-            [NKind(1), NKind(1059)]
-        ).pubkey(self.agent_pubkey).since(since_time)
-        await self.client.subscribe(subscribe_filter, None)
+
+        # Filter for public mentions (Kind 1) with #p tag = agent
+        mention_filter = Filter().kind(NKind(1)).custom_tag(
+            SingleLetterTag.lowercase(Alphabet.P),
+            self.agent_pubkey_hex
+        ).since(since_time)
+        await self.client.subscribe(mention_filter, None)
+
+        # Filter for Gift Wraps (Kind 1059) with #p tag = agent
+        gift_filter = Filter().kind(NKind(1059)).custom_tag(
+            SingleLetterTag.lowercase(Alphabet.P),
+            self.agent_pubkey_hex
+        ).since(since_time)
+        await self.client.subscribe(gift_filter, None)
+
         self.get_logger().info(
             'Subscribed to Mentions (Kind 1) and Gift Wraps (Kind 1059) '
-            'with a 3-day history margin.'
+            'via #p tag filter with a 3-day history margin.'
         )
 
         # Class to handle incoming notifications

@@ -1,0 +1,49 @@
+# =============================================================================
+# Default Service Definitions for NIP-89 Service Announcement Skill
+# =============================================================================
+# This file defines the services the agent offers.  Each service maps to a
+# Nostr skill script that the LLM agent can call.
+# =============================================================================
+
+services:
+  - id: "agent.bob/relay-scan"
+    title: "Relay Scanner"
+    description: "Scan Nostr relays and produce a catalog with metadata and trust classification."
+    alt: "scan_relay wss://<relay-url>"
+    skill: "relay_discovery"
+    script: "scripts/scan_relays.py"
+
+  - id: "agent.bob/web-research"
+    title: "Web Research"
+    description: "Search the web for information on a topic and summarize results."
+    alt: "search_web <query>"
+    skill: "web_researcher"
+    script: "scripts/search.py"
+
+  - id: "agent.bob/journal-service"
+    title: "Journal Service"
+    description: "Create a structured journal entry from provided content or system state."
+    alt: "journal <topic>"
+    skill: "journal"
+    script: "scripts/journal_writer.py"
+
+  - id: "agent.bob/memory-backup"
+    title: "Memory Backup"
+    description: "Store or retrieve Nostr events as decentralized long-term memory."
+    alt: "backup <kind>"
+    skill: "nostr_memory"
+    script: "scripts/nostr_memory_tool.py"
+
+  - id: "agent.bob/task-reminder"
+    title: "Task Reminder"
+    description: "Schedule or manage timed tasks and reminders."
+    alt: "remind <text>"
+    skill: "task_scheduler"
+    script: "scripts/tools.py"
+
+  - id: "agent.bob/code-execute"
+    title: "Code Execution"
+    description: "Execute Python code in a sandboxed REPL environment and return results."
+    alt: "run <python-code>"
+    skill: "repl_kernel"
+    script: "scripts/tools.py"
